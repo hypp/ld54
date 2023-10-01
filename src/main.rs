@@ -21,7 +21,13 @@ const CIRCLE_SIZE: Vec3 = Vec3::new(30.0, 30.0, 0.0);
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                title: "LD54 - Limited Space. A failed attempt by Mathias Olsson".to_string(),
+                ..default()
+            }),
+            ..default()
+        }))
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(200.0)) // Physics plugin
         .add_plugins(RapierDebugRenderPlugin::default()) // Debug plugin        .add_systems(Startup, setup)
         .add_systems(Startup, setup)
