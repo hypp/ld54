@@ -1,9 +1,9 @@
-//! Renders a 2D scene containing a single, moving sprite.
 
 use bevy::prelude::*;
 use bevy::render::render_resource::*;
 use bevy::sprite::*;
 use bevy_rapier2d::prelude::*;
+use bevy::math::Vec3Swizzles;
 
 // x coordinates
 const LEFT_EDGE: f32 = -450.;
@@ -16,7 +16,7 @@ const PLAYER_VELOCITY_X: f32 = 100.;
 const PLAYER_VELOCITY_Y: f32 = 100.;
 
 const CIRCLE_COLOR: Color = Color::rgb(1.0, 0.5, 0.5);
-const CIRCLE_STARTING_POSITION: Vec3 = Vec3::new(0.0, -50.0, 1.0);
+const CIRCLE_STARTING_POSITION: Vec3 = Vec3::new(0.0, 0.0, 1.0);
 const CIRCLE_SIZE: Vec3 = Vec3::new(30.0, 30.0, 0.0);
 
 fn main() {
@@ -25,8 +25,29 @@ fn main() {
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(200.0)) // Physics plugin
         .add_plugins(RapierDebugRenderPlugin::default()) // Debug plugin        .add_systems(Startup, setup)
         .add_systems(Startup, setup)
-        .add_systems(Update, player_movement)
+        .add_systems(Update, (player_movement, change_scale_direction, scale_ring))
         .run();
+}
+
+
+#[derive(Component)]
+struct Scaling {
+    scale_direction: Vec3,
+    scale_speed: f32,
+    max_element_size: f32,
+    min_element_size: f32,
+}
+
+// Implement a simple initialization.
+impl Scaling {
+    fn new() -> Self {
+        Scaling {
+            scale_direction: Vec3 { x: 1., y: 1., z: 0.} ,
+            scale_speed: 2.0,
+            max_element_size: 5.0,
+            min_element_size: 1.0,
+        }
+    }
 }
 
 #[derive(Component)]
@@ -146,14 +167,14 @@ fn setup(mut commands: Commands,
             transform: Transform::from_translation(CIRCLE_STARTING_POSITION),
             ..default()
         },
+        Scaling::new()
     ))
     .insert(RigidBody::KinematicVelocityBased)
     .insert(Collider::polyline(ring.positions2d.clone(), Some(ring.indices.clone())))
-    //.insert(Collider::convex_decomposition(&ring.positions2d, &ring.indices))
     .insert(ring)
     .insert(Velocity {
         linvel: Vec2::new(0.0, 0.0),
-        angvel: 0.2
+        angvel: 0.8
     })
     .insert(GravityScale(0.0))
     .insert(TransformBundle::from(Transform::from_xyz(0.,0.,0.)))
@@ -189,3 +210,32 @@ fn player_movement(
     player.translation = Some(translation);
 }
 
+fn change_scale_direction(mut cubes: Query<(&mut Transform, &mut Scaling)>) {
+    for (mut transform, mut cube) in &mut cubes {
+        // If an entity scaled beyond the maximum of its size in any dimension
+        // the scaling vector is flipped so the scaling is gradually reverted.
+        // Additionally, to ensure the condition does not trigger again we floor the elements to
+        // their next full value, which should be max_element_size at max.
+        if transform.scale.max_element() > cube.max_element_size {
+            cube.scale_direction *= -1.0;
+            transform.scale = transform.scale.floor();
+        }
+        // If an entity scaled beyond the minimum of its size in any dimension
+        // the scaling vector is also flipped.
+        // Additionally the Values are ceiled to be min_element_size at least
+        // and the scale direction is flipped.
+        // This way the entity will change the dimension in which it is scaled any time it
+        // reaches its min_element_size.
+        if transform.scale.min_element() < cube.min_element_size {
+            cube.scale_direction *= -1.0;
+            transform.scale = transform.scale.ceil();
+            //cube.scale_direction = cube.scale_direction.zxy();
+        }
+    }
+}
+
+fn scale_ring(mut cubes: Query<(&mut Transform, &Scaling)>, timer: Res<Time>) {
+    for (mut transform, cube) in &mut cubes {
+        transform.scale += cube.scale_direction * cube.scale_speed * timer.delta_seconds();
+    }
+}
