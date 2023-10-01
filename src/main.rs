@@ -76,7 +76,7 @@ impl Ring {
             let (sin, cos) = theta.sin_cos();
     
             positions.push([cos * inner_radius, sin * inner_radius, 0.0]);
-            positions2d.push(Vec2 {x: cos * outer_radius, y: sin * outer_radius});
+            positions2d.push(Vec2 {x: cos * inner_radius, y: sin * inner_radius});
             normals.push([0.0, 0.0, 1.0]);
             uvs.push([0.5 * (cos + 1.0), 1.0 - 0.5 * (sin + 1.0)]);
         }
@@ -125,10 +125,10 @@ fn setup(mut commands: Commands,
 
     commands.spawn(Camera2dBundle::default());
     commands.spawn((
-        Player {x: 100., y: 0., x_velocity: 0., y_velocity: 0.},
+        Player {x: 0., y: 0., x_velocity: 0., y_velocity: 0.},
         SpriteBundle {
             texture: asset_server.load("branding/icon.png"),
-            transform: Transform::from_xyz(100., 0., 0.),
+            transform: Transform::from_xyz(0., 0., 0.),
             ..default()
         },
     ))
@@ -148,13 +148,15 @@ fn setup(mut commands: Commands,
         },
     ))
     .insert(RigidBody::KinematicVelocityBased)
-    //.insert(Collider::polyline(ring.positions2d, Some(ring.indices)))
-    .insert(Collider::convex_decomposition(&ring.positions2d, &ring.indices))
+    .insert(Collider::polyline(ring.positions2d.clone(), Some(ring.indices.clone())))
+    //.insert(Collider::convex_decomposition(&ring.positions2d, &ring.indices))
     .insert(ring)
     .insert(Velocity {
         linvel: Vec2::new(0.0, 0.0),
         angvel: 0.2
     })
+    .insert(GravityScale(0.0))
+    .insert(TransformBundle::from(Transform::from_xyz(0.,0.,0.)))
     ;
 
 }
@@ -187,17 +189,3 @@ fn player_movement(
     player.translation = Some(translation);
 }
 
-/* 
-fn ring_movement(
-    time: Res<Time>,
-    mut query: Query<(&mut Ring, &mut RigidBodyVelocity)>
-) {
-    let (mut ring, mut controller) = query.single_mut();
-
-    controller.
-    controller.set_angvel(3.0,true);
-
-
-
-}
-*/
