@@ -3,7 +3,6 @@ use bevy::prelude::*;
 use bevy::render::render_resource::*;
 use bevy::sprite::*;
 use bevy_rapier2d::prelude::*;
-use bevy::math::Vec3Swizzles;
 
 // x coordinates
 const LEFT_EDGE: f32 = -450.;
@@ -15,9 +14,8 @@ const TOP_EDGE: f32 = 300.;
 const PLAYER_VELOCITY_X: f32 = 100.;
 const PLAYER_VELOCITY_Y: f32 = 100.;
 
-const CIRCLE_COLOR: Color = Color::rgb(1.0, 0.5, 0.5);
-const CIRCLE_STARTING_POSITION: Vec3 = Vec3::new(0.0, 0.0, 1.0);
-const CIRCLE_SIZE: Vec3 = Vec3::new(30.0, 30.0, 0.0);
+const RING_COLOR: Color = Color::rgb(1.0, 0.5, 0.5);
+const RING_STARTING_POSITION: Vec3 = Vec3::new(0.0, 0.0, 1.0);
 
 fn main() {
     App::new()
@@ -51,7 +49,7 @@ impl Scaling {
             scale_direction: Vec3 { x: 1., y: 1., z: 0.} ,
             scale_speed: 0.1,
             max_element_size: 3.0,
-            min_element_size: 1.0,
+            min_element_size: 0.5,
         }
     }
 }
@@ -175,8 +173,8 @@ fn setup(mut commands: Commands,
     commands.spawn((
         MaterialMesh2dBundle {
             mesh: meshes.add(ring.make_mesh()).into(),
-            material: materials.add(ColorMaterial::from(CIRCLE_COLOR)),
-            transform: Transform::from_translation(CIRCLE_STARTING_POSITION),
+            material: materials.add(ColorMaterial::from(RING_COLOR)),
+            transform: Transform::from_translation(RING_STARTING_POSITION).with_scale(Vec3 {x: 3., y: 3., z: 1.}),
             ..default()
         },
         Scaling::new()
@@ -190,7 +188,6 @@ fn setup(mut commands: Commands,
     })
     .insert(GravityScale(0.0))
     .insert(Ccd::enabled())
-//    .insert(TransformBundle::from(Transform::from_xyz(0.,0.,0.)))
     ;
 
     // Bottom floor
@@ -299,11 +296,11 @@ fn change_scale_direction(mut rings: Query<(&mut Transform, &mut Scaling)>) {
     for (mut transform, mut ring) in &mut rings {
         if transform.scale.max_element() > ring.max_element_size {
             ring.scale_direction *= -1.0;
-            transform.scale = transform.scale.floor();
+            transform.scale = Vec3 {x: ring.max_element_size, y:ring.max_element_size, z: 1.};
         }
         if transform.scale.min_element() < ring.min_element_size {
             ring.scale_direction *= -1.0;
-            transform.scale = transform.scale.ceil();
+            transform.scale = Vec3 {x: ring.min_element_size, y:ring.min_element_size, z: 1.};
         }
     }
 }
