@@ -49,8 +49,8 @@ impl Scaling {
     fn new() -> Self {
         Scaling {
             scale_direction: Vec3 { x: 1., y: 1., z: 0.} ,
-            scale_speed: 2.0,
-            max_element_size: 5.0,
+            scale_speed: 0.1,
+            max_element_size: 3.0,
             min_element_size: 1.0,
         }
     }
@@ -159,9 +159,15 @@ fn setup(mut commands: Commands,
             ..default()
         },
     ))
-    .insert(RigidBody::KinematicPositionBased)
+    .insert(RigidBody::Dynamic)
     .insert(Collider::cuboid(10.5, 30.5))
-    .insert(KinematicCharacterController::default())
+//    .insert(KinematicCharacterController::default())
+    .insert(GravityScale(0.0))
+    .insert(Ccd::enabled())
+    .insert(Velocity {
+        linvel: Vec2::new(0.0, 0.0),
+        angvel: 0.0
+    })    
     ;
 
     let ring = Ring::new();
@@ -175,7 +181,7 @@ fn setup(mut commands: Commands,
         },
         Scaling::new()
     ))
-    .insert(RigidBody::KinematicVelocityBased)
+    .insert(RigidBody::Dynamic)
     .insert(Collider::polyline(ring.positions2d.clone(), Some(ring.indices.clone())))
     .insert(ring)
     .insert(Velocity {
@@ -183,37 +189,78 @@ fn setup(mut commands: Commands,
         angvel: 0.8
     })
     .insert(GravityScale(0.0))
-    .insert(TransformBundle::from(Transform::from_xyz(0.,0.,0.)))
+    .insert(Ccd::enabled())
+//    .insert(TransformBundle::from(Transform::from_xyz(0.,0.,0.)))
     ;
+
+    // Bottom floor
+    commands.spawn(RigidBody::Fixed)
+    .insert(Collider::cuboid(0.5*(LEFT_EDGE.abs()+RIGHT_EDGE.abs()), 0.5))
+    .insert(TransformBundle::from_transform(Transform::from_xyz(0., BOTTOM_EDGE, 0.)))
+    ;
+
+    // Top floor
+    commands.spawn(RigidBody::Fixed)
+    .insert(Collider::cuboid(0.5*(LEFT_EDGE.abs()+RIGHT_EDGE.abs()), 0.5))
+    .insert(TransformBundle::from_transform(Transform::from_xyz(0., TOP_EDGE, 0.)))
+    ;
+
+    // Left wall
+    commands.spawn(RigidBody::Fixed)
+    .insert(Collider::cuboid(0.5, 0.5*(TOP_EDGE.abs()+BOTTOM_EDGE.abs())))
+    .insert(TransformBundle::from_transform(Transform::from_xyz(LEFT_EDGE, 0., 0.)))
+    ;
+
+    // Right wall
+    commands.spawn(RigidBody::Fixed)
+    .insert(Collider::cuboid(0.5, 0.5*(TOP_EDGE.abs()+BOTTOM_EDGE.abs())))
+    .insert(TransformBundle::from_transform(Transform::from_xyz(RIGHT_EDGE, 0., 0.)))
+    ;
+
 
 }
 
 fn player_movement(
     input: Res<Input<KeyCode>>,
     time: Res<Time>,
-    mut query: Query<&mut KinematicCharacterController>,
+    mut query: Query<(&mut Velocity, &mut Player)>,
 ) {
-    let mut player = query.single_mut();
+    let (mut vel, mut player) = query.single_mut();
 
-    let mut translation = Vec2::new(0.0, 0.0);
+    let mut velocity = Vec2 {x: 0., y: 0.};
+
+    let mut changed = false;
 
     if input.pressed(KeyCode::Right) {
-        translation.x += time.delta_seconds() * PLAYER_VELOCITY_X;
+        velocity.x = time.delta_seconds() * PLAYER_VELOCITY_X;
+        player.x_velocity += time.delta_seconds() * PLAYER_VELOCITY_X;
+        changed = true;
     }
 
     if input.pressed(KeyCode::Left) {
-        translation.x += time.delta_seconds() * PLAYER_VELOCITY_X * -1.0;
+        velocity.x = time.delta_seconds() * PLAYER_VELOCITY_X * -1.0;
+        player.x_velocity += time.delta_seconds() * PLAYER_VELOCITY_X * -1.0;
+        changed = true;
     }
 
     if input.pressed(KeyCode::Up) {
-        translation.y += time.delta_seconds() * PLAYER_VELOCITY_Y;
+        velocity.y = time.delta_seconds() * PLAYER_VELOCITY_Y;
+        player.y_velocity += time.delta_seconds() * PLAYER_VELOCITY_Y;
+        changed = true;
     }
 
     if input.pressed(KeyCode::Down) {
-        translation.y += time.delta_seconds() * PLAYER_VELOCITY_Y * -1.0;
+        velocity.y = time.delta_seconds() * PLAYER_VELOCITY_Y * -1.0;
+        player.y_velocity += time.delta_seconds() * PLAYER_VELOCITY_Y * -1.0;
+        changed = true;
     }
 
-    player.translation = Some(translation);
+    player.x_velocity = player.x_velocity.clamp(-PLAYER_VELOCITY_X,PLAYER_VELOCITY_X);
+    player.y_velocity = player.y_velocity.clamp(-PLAYER_VELOCITY_Y,PLAYER_VELOCITY_Y);
+
+    if changed {
+        vel.linvel = Vec2 {x: player.x_velocity, y: player.y_velocity};
+    }
 }
 
 fn change_scale_direction(mut rings: Query<(&mut Transform, &mut Scaling)>) {
@@ -234,3 +281,4 @@ fn scale_ring(mut rings: Query<(&mut Transform, &Scaling)>, timer: Res<Time>) {
         transform.scale += ring.scale_direction * ring.scale_speed * timer.delta_seconds();
     }
 }
+
