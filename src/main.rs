@@ -56,8 +56,8 @@ impl Scaling {
 
 #[derive(Component)]
 struct Player {
-    x: f32,
-    y: f32,
+//    x: f32,
+//    y: f32,
     x_velocity: f32,
     y_velocity: f32
 }
@@ -150,7 +150,8 @@ fn setup(mut commands: Commands,
 
     commands.spawn(Camera2dBundle::default());
     commands.spawn((
-        Player {x: 0., y: 0., x_velocity: 0., y_velocity: 0.},
+//        Player {x: 0., y: 0., x_velocity: 0., y_velocity: 0.},
+        Player {x_velocity: 0., y_velocity: 0.},
         SpriteBundle {
             texture: asset_server.load("branding/icon.png"),
             transform: Transform::from_xyz(0., 0., 0.),
