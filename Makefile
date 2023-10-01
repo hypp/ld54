@@ -1,6 +1,6 @@
 
 release:
-	trunk build
+	trunk build --public-url ld54
 
 clean:
 	trunk clean
