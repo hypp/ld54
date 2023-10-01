@@ -2,4 +2,10 @@
 release:
 	trunk build
 
-.PHONY: release
+clean:
+	trunk clean
+
+cleanall:
+	cargo clean
+
+.PHONY: release clean cleanall
