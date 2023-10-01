@@ -29,7 +29,7 @@ fn main() {
             ..default()
         }))
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(200.0)) // Physics plugin
-        .add_plugins(RapierDebugRenderPlugin::default()) // Debug plugin        .add_systems(Startup, setup)
+       // .add_plugins(RapierDebugRenderPlugin::default()) // Debug plugin        .add_systems(Startup, setup)
         .add_systems(Startup, setup)
         .add_systems(Update, (player_movement, change_scale_direction, scale_ring))
         .run();
@@ -194,25 +194,57 @@ fn setup(mut commands: Commands,
     ;
 
     // Bottom floor
-    commands.spawn(RigidBody::Fixed)
+    commands.spawn(SpriteBundle {
+        sprite: Sprite {
+            color: Color::rgb(0.25, 0.25, 0.75),
+            custom_size: Some(Vec2::new(LEFT_EDGE.abs()+RIGHT_EDGE.abs(), 1.)),
+            ..default()
+        },
+        ..default()
+    })        
+    .insert(RigidBody::Fixed)
     .insert(Collider::cuboid(0.5*(LEFT_EDGE.abs()+RIGHT_EDGE.abs()), 0.5))
     .insert(TransformBundle::from_transform(Transform::from_xyz(0., BOTTOM_EDGE, 0.)))
     ;
 
     // Top floor
-    commands.spawn(RigidBody::Fixed)
+    commands.spawn(SpriteBundle {
+        sprite: Sprite {
+            color: Color::rgb(0.25, 0.25, 0.75),
+            custom_size: Some(Vec2::new(LEFT_EDGE.abs()+RIGHT_EDGE.abs(), 1.)),
+            ..default()
+        },
+        ..default()
+    })        
+    .insert(RigidBody::Fixed)
     .insert(Collider::cuboid(0.5*(LEFT_EDGE.abs()+RIGHT_EDGE.abs()), 0.5))
     .insert(TransformBundle::from_transform(Transform::from_xyz(0., TOP_EDGE, 0.)))
     ;
 
     // Left wall
-    commands.spawn(RigidBody::Fixed)
+    commands.spawn(SpriteBundle {
+        sprite: Sprite {
+            color: Color::rgb(0.25, 0.25, 0.75),
+            custom_size: Some(Vec2::new(1., TOP_EDGE.abs()+BOTTOM_EDGE.abs())),
+            ..default()
+        },
+        ..default()
+    })        
+    .insert(RigidBody::Fixed)
     .insert(Collider::cuboid(0.5, 0.5*(TOP_EDGE.abs()+BOTTOM_EDGE.abs())))
     .insert(TransformBundle::from_transform(Transform::from_xyz(LEFT_EDGE, 0., 0.)))
     ;
 
     // Right wall
-    commands.spawn(RigidBody::Fixed)
+    commands.spawn(SpriteBundle {
+        sprite: Sprite {
+            color: Color::rgb(0.25, 0.25, 0.75),
+            custom_size: Some(Vec2::new(1., TOP_EDGE.abs()+BOTTOM_EDGE.abs())),
+            ..default()
+        },
+        ..default()
+    })        
+    .insert(RigidBody::Fixed)
     .insert(Collider::cuboid(0.5, 0.5*(TOP_EDGE.abs()+BOTTOM_EDGE.abs())))
     .insert(TransformBundle::from_transform(Transform::from_xyz(RIGHT_EDGE, 0., 0.)))
     ;
