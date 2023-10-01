@@ -210,32 +210,21 @@ fn player_movement(
     player.translation = Some(translation);
 }
 
-fn change_scale_direction(mut cubes: Query<(&mut Transform, &mut Scaling)>) {
-    for (mut transform, mut cube) in &mut cubes {
-        // If an entity scaled beyond the maximum of its size in any dimension
-        // the scaling vector is flipped so the scaling is gradually reverted.
-        // Additionally, to ensure the condition does not trigger again we floor the elements to
-        // their next full value, which should be max_element_size at max.
-        if transform.scale.max_element() > cube.max_element_size {
-            cube.scale_direction *= -1.0;
+fn change_scale_direction(mut rings: Query<(&mut Transform, &mut Scaling)>) {
+    for (mut transform, mut ring) in &mut rings {
+        if transform.scale.max_element() > ring.max_element_size {
+            ring.scale_direction *= -1.0;
             transform.scale = transform.scale.floor();
         }
-        // If an entity scaled beyond the minimum of its size in any dimension
-        // the scaling vector is also flipped.
-        // Additionally the Values are ceiled to be min_element_size at least
-        // and the scale direction is flipped.
-        // This way the entity will change the dimension in which it is scaled any time it
-        // reaches its min_element_size.
-        if transform.scale.min_element() < cube.min_element_size {
-            cube.scale_direction *= -1.0;
+        if transform.scale.min_element() < ring.min_element_size {
+            ring.scale_direction *= -1.0;
             transform.scale = transform.scale.ceil();
-            //cube.scale_direction = cube.scale_direction.zxy();
         }
     }
 }
 
-fn scale_ring(mut cubes: Query<(&mut Transform, &Scaling)>, timer: Res<Time>) {
-    for (mut transform, cube) in &mut cubes {
-        transform.scale += cube.scale_direction * cube.scale_speed * timer.delta_seconds();
+fn scale_ring(mut rings: Query<(&mut Transform, &Scaling)>, timer: Res<Time>) {
+    for (mut transform, ring) in &mut rings {
+        transform.scale += ring.scale_direction * ring.scale_speed * timer.delta_seconds();
     }
 }
